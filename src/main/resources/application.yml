@@ -1,0 +1,9 @@
+server:
+  port: 7030
+
+spring:
+  application:
+    name: langchain4j-demo-app
+
+
+
