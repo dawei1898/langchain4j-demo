@@ -1,13 +1,14 @@
-package com.langchain4j.demo;
+package com.langchain4j.demo.test;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class Langchain4jDemoApplicationTests {
+class LangChain4jDemoAppTest {
 
     @Test
     void contextLoads() {
+        System.out.println("LangChain4jDemoAppTest.");
     }
 
 }

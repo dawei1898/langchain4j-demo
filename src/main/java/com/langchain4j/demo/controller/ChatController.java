@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
+import java.util.Map;
+
 /**
  * 对话服务
  *
@@ -31,18 +33,18 @@ public class ChatController {
 
 
     @RequestMapping("/chat")
-    public String chat(@RequestParam String message) {
+    public Map chat(@RequestParam String message) {
         String result = chatModel.chat(message);
-        return result;
+        return Map.of("content", result);
     }
 
-    @RequestMapping(path = "/streamChat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> streamChat(@RequestParam String message) {
+    @RequestMapping(path = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<Map<String, String>> streamChat(@RequestParam String message) {
         Assistant assistant = AiServices.builder(Assistant.class)
                 .streamingChatModel(streamingChatModel)
                 .build();
         Flux<String> stringFlux = assistant.chat(message);
-        return stringFlux;
+        return stringFlux.map(text -> Map.of("content", text));
     }
 
 }
