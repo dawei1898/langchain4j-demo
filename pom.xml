@@ -18,6 +18,8 @@
 
     <properties>
         <java.version>21</java.version>
+        <langchain4j.version>1.4.0</langchain4j.version>
+        <langchain4j-beta.version>1.4.0-beta10</langchain4j-beta.version>
     </properties>
 
     <dependencies>
@@ -35,13 +37,13 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
-            <version>1.4.0</version>
+            <version>${langchain4j.version}</version>
         </dependency>
         <!-- langchain4j-open-ai -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-open-ai-spring-boot-starter</artifactId>
-            <version>1.4.0-beta10</version>
+            <version>${langchain4j-beta.version}</version>
         </dependency>
         <!-- langchain4j-dashscope -->
         <!--<dependency>
@@ -53,7 +55,12 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-reactor</artifactId>
-            <version>1.4.0-beta10</version>
+            <version>${langchain4j-beta.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-document-parser-apache-tika</artifactId>
+            <version>${langchain4j-beta.version}</version>
         </dependency>
 
         <dependency>
