@@ -63,6 +63,18 @@ public class ApacheTikaDocumentParserTest {
         System.out.println("【Docx document】\n" + document.text());
     }
 
+    @Test
+    public void htmlDocumentParserTest() throws Exception {
+        String htmlUrl = "https://docs.langchain4j.dev/apidocs/index.html";
+
+        InputStream inputStream = new URL(htmlUrl).openStream();
+        DocumentParser parser = new ApacheTikaDocumentParser();
+        Document document = parser.parse(inputStream);
+        System.out.println("【Html document】\n" + document.text());
+    }
+
+
+
 
 
 }
