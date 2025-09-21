@@ -8,8 +8,10 @@ import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.openai.OpenAiChatModel;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -25,6 +27,9 @@ import static dev.langchain4j.model.openai.OpenAiChatModelName.GPT_4_O_MINI;
 @SpringBootTest
 @ActiveProfiles("dev")
 public class ChatModelTest {
+
+    @Value("${deepseek.api-key}")
+    private String deepseekApiKey;
 
     @Resource
     private ChatModel chatModel;
@@ -83,6 +88,27 @@ public class ChatModelTest {
 
     }
 
+    /**
+     * 对话-开启推理
+     */
+    @Test
+    public void testChatReasoning() {
+        String message = "你是谁？";
+        System.out.println("【提问】 " + message);
 
+        OpenAiChatModel openAiChatModel = OpenAiChatModel.builder()
+                .baseUrl("https://api.deepseek.com/v1")
+                .apiKey(deepseekApiKey)
+                .modelName("deepseek-reasoner")
+                .returnThinking(true)
+                .build();
+
+        UserMessage userMessage = UserMessage.from(message);
+        AiMessage aiMessage = openAiChatModel.chat(userMessage).aiMessage();
+        String thinking = aiMessage.thinking();
+        System.out.println("【思考】" + thinking);
+        String text = aiMessage.text();
+        System.out.println("【回答】 " + text);
+    }
 
 }
