@@ -63,6 +63,13 @@
             <version>${langchain4j-beta.version}</version>
         </dependency>
 
+        <!-- langchain4j-agentic -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-agentic</artifactId>
+            <version>${langchain4j-beta.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -103,7 +110,7 @@
     </build>
 
     <!-- 仓库地址 -->
-    <!--<repositories>
+    <repositories>
         <repository>
             <id>aliyun-public</id>
             <url>https://maven.aliyun.com/repository/public</url>
@@ -114,7 +121,7 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
-    </repositories>-->
+    </repositories>
 
 
 </project>
