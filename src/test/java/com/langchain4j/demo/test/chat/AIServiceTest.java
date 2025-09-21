@@ -1,12 +1,18 @@
 package com.langchain4j.demo.test.chat;
 
 
+import com.langchain4j.demo.ai.AssistantMemoryTest;
 import com.langchain4j.demo.ai.AssistantTest;
+import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.data.message.*;
+import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.ChatMemoryProvider;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.Result;
 import dev.langchain4j.service.TokenStream;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
@@ -43,7 +49,7 @@ public class AIServiceTest {
      * 对话-同步
      */
     @Test
-    public void testAIService() {
+    public void testChat01() {
         AssistantTest assistant = AiServices.builder(AssistantTest.class)
                 .chatModel(chatModel)
                 .build();
@@ -51,7 +57,6 @@ public class AIServiceTest {
         String message = "你是谁？";
         System.out.println("【提问】 = " + message);
 
-        // @SystemMessage("你是我的好朋友：大壮。用风趣幽默的方式回答。")
         String content = assistant.chat(message);
         System.out.println("【回答】 = " + content);
     }
@@ -61,7 +66,7 @@ public class AIServiceTest {
      * 对话-同步
      */
     @Test
-    public void testAIService2() {
+    public void testChat02() {
         AssistantTest assistant = AiServices.builder(AssistantTest.class)
                 .chatModel(chatModel)
                 .build();
@@ -78,7 +83,7 @@ public class AIServiceTest {
      * 对话-同步 带图片
      */
     @Test
-    public void testAIService3() {
+    public void testChat03() {
         AssistantTest assistant = AiServices.builder(AssistantTest.class)
                 .chatModel(chatModel)
                 .build();
@@ -100,7 +105,7 @@ public class AIServiceTest {
      * 对话-同步 带图片
      */
     @Test
-    public void testAIService4() {
+    public void testChat04() {
         AssistantTest assistant = AiServices.builder(AssistantTest.class)
                 .chatModel(chatModel)
                 .build();
@@ -123,7 +128,7 @@ public class AIServiceTest {
      * 对话-同步 带系统提示词
      */
     @Test
-    public void testAIService5() {
+    public void testChat05() {
         AssistantTest assistant = AiServices.builder(AssistantTest.class)
                 .chatModel(chatModel)
                 .build();
@@ -134,6 +139,28 @@ public class AIServiceTest {
         // @SystemMessage("给定一个国家的名称，用它的首都名称来回答")
         String content = assistant.chatWithSystemMessage(message);
         System.out.println("【回答】 = " + content);
+    }
+
+    /**
+     * 对话-同步 自定义返回类型
+     */
+    @Test
+    public void testReturnType() {
+        AssistantTest assistant = AiServices.builder(AssistantTest.class)
+                .chatModel(chatModel)
+                .build();
+
+        String message = "java";
+        System.out.println("【提问】 = " + message);
+
+        // @UserMessage("为以下主题的文章生成大纲: {{it}}")
+        Result<List<String>> result = assistant.generateOutlineFor(message);
+
+        for (String content : result.content()) {
+            System.out.println("【回答】 = " + content);
+        }
+        System.out.println("result.finalResponse() = " + result.finalResponse());
+
     }
 
 
@@ -268,5 +295,47 @@ public class AIServiceTest {
         TimeUnit.SECONDS.sleep(10);
         System.out.println("【结束】");
     }
+
+
+    /**
+     * 对话-带记忆
+     */
+    @Test
+    public void testChatModel() throws Exception {
+
+        ChatMemoryProvider chatMemoryProvider = new ChatMemoryProvider() {
+            @Override
+            public ChatMemory get(Object memoryId) {
+                return MessageWindowChatMemory.withMaxMessages(5);
+            }
+        };
+
+        AssistantMemoryTest assistant = AiServices.builder(AssistantMemoryTest.class)
+                .chatModel(chatModel)
+                .chatMemoryProvider(chatMemoryProvider)
+                .build();
+
+        String chatId = "1";
+        String chatId2 = "2";
+
+        String message = "我住在深圳湾一号，张三是我朋友，李四是我表弟。深圳天气怎么样？";
+        System.out.println("【提问1】 = " + message);
+
+        String content = assistant.chat(chatId, message);
+        System.out.println("【回答1】 = " + content);
+
+        String message2 = "我住在哪里？";
+        System.out.println("【提问2】 = " + message2);
+        String content2 = assistant.chat(chatId2, message2);
+        System.out.println("【回答2】 = " + content2);
+
+        String message3 = "我表弟是谁？";
+        System.out.println("【提问3】 = " + message3);
+        String content3 = assistant.chat(chatId, message3);
+        System.out.println("【回答3】 = " + content3);
+
+    }
+
+
 
 }
