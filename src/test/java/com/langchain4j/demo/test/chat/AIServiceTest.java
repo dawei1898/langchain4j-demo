@@ -4,16 +4,24 @@ package com.langchain4j.demo.test.chat;
 import com.langchain4j.demo.ai.AssistantMemoryTest;
 import com.langchain4j.demo.ai.AssistantTest;
 import dev.langchain4j.agent.tool.Tool;
+import dev.langchain4j.data.document.Document;
+import dev.langchain4j.data.document.loader.ClassPathDocumentLoader;
 import dev.langchain4j.data.message.*;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.openai.OpenAiModerationModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
+import dev.langchain4j.rag.content.retriever.ContentRetriever;
+import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.Result;
 import dev.langchain4j.service.TokenStream;
+import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
+import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+
+import static dev.langchain4j.model.openai.OpenAiModerationModelName.TEXT_MODERATION_LATEST;
 
 /**
  * 测试 AIService
@@ -43,6 +53,9 @@ public class AIServiceTest {
 
     @Resource
     private OpenAiStreamingChatModel openAiStreamingChatModel;
+
+    @Resource
+    private OpenAiModerationModel moderationModel;
 
 
     /**
@@ -383,5 +396,60 @@ public class AIServiceTest {
 
     }
 
+
+    /**
+     * 检索增强生成
+     * TODO 报错
+     */
+    @Test
+    public void testContentRetriever() {
+        // 读取文档
+        String classPath = "temp/docs/最伟大的人.txt";
+        Document document = ClassPathDocumentLoader.loadDocument(classPath);
+
+        // 创建内存向量库
+        InMemoryEmbeddingStore<TextSegment> embeddingStore = new InMemoryEmbeddingStore<>();
+        // 将文档添加到向量库中 TODO 报错
+        EmbeddingStoreIngestor.ingest(document, embeddingStore);
+        // 创建内容检索器
+        ContentRetriever contentRetriever
+                = EmbeddingStoreContentRetriever.from(embeddingStore);
+
+
+        AssistantTest assistant = AiServices.builder(AssistantTest.class)
+                .chatModel(chatModel)
+                .contentRetriever(contentRetriever)
+                .build();
+
+        String message = "谁是最伟大的人？";
+        System.out.println("【提问】 = " + message);
+
+        String content = assistant.chat(message);
+        System.out.println("【回答】 = " + content);
+
+
+    }
+
+
+    /**
+     * 自动内容审核
+     */
+    @Test
+    public void testAutoContentModeration() {
+        AssistantTest assistant = AiServices.builder(AssistantTest.class)
+                .chatModel(chatModel)
+                .moderationModel(moderationModel)
+                .build();
+
+        String message = "我要 kill 了你!!!";
+        System.out.println("【提问】 = " + message);
+
+        try {
+            String content = assistant.chat(message);
+            System.out.println("【回答】 = " + content);
+        } catch (Exception e) {
+            System.out.println("检测到内容审核报错 = " + e);
+        }
+    }
 
 }
