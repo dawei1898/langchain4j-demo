@@ -336,6 +336,52 @@ public class AIServiceTest {
 
     }
 
+    // 工具类
+    static class Tools {
+
+        // 加法
+        @Tool
+        int add(int a, int b) {
+            return a + b;
+        }
+
+        // 减法
+        @Tool
+        int subtract(int a, int b) {
+            return a - b;
+        }
+
+        // 乘法
+        @Tool
+        int multiply(int a, int b) {
+            return a * b;
+        }
+
+
+        // 除法
+        @Tool
+        int divide(int a, int b) {
+            return a / b;
+        }
+    }
+
+    /**
+     * 工具调用
+     */
+    @Test
+    public void testTools01() throws Exception {
+        AssistantTest assistant = AiServices.builder(AssistantTest.class)
+                .chatModel(chatModel)
+                .tools(new Tools())
+                .build();
+
+        String message = "帮我算一下 1 + 3 * 2 等于多少？";
+        System.out.println("【提问】 = " + message);
+
+        String content = assistant.chat(message);
+        System.out.println("【回答】 = " + content);
+
+    }
 
 
 }
