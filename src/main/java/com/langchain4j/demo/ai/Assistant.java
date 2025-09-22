@@ -1,6 +1,7 @@
 package com.langchain4j.demo.ai;
 
-import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.service.TokenStream;
+import dev.langchain4j.service.UserMessage;
 import reactor.core.publisher.Flux;
 
 /**
@@ -10,8 +11,8 @@ public interface Assistant {
 
     String chat(String message);
 
-    Flux<String> chatStream(String message);
+    TokenStream chatStream(@UserMessage String message);
 
-    Flux<AiMessage> chatStreamReasoning(String message);
+    Flux<String> chatStreamFlux(String message);
 
 }

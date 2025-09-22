@@ -1,6 +1,7 @@
 package com.langchain4j.demo.controller;
 
 import com.langchain4j.demo.ai.Assistant;
+import com.langchain4j.demo.ai.AssistantTest;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
@@ -8,6 +9,7 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.response.*;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.TokenStream;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,22 +42,31 @@ public class ChatController {
     private StreamingChatModel streamingChatModel;
 
 
+    /**
+     * 对话
+     */
     @RequestMapping("/chat")
     public Map<String, String> chat(@RequestParam String message) {
         String result = chatModel.chat(message);
         return Map.of("content", result);
     }
 
+    /**
+     * 流式对话
+     */
     @RequestMapping(path = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<Map<String, String>> chatStream(@RequestParam String message) {
         Assistant assistant = AiServices.builder(Assistant.class)
                 .streamingChatModel(streamingChatModel)
                 .build();
-        Flux<String> stringFlux = assistant.chatStream(message);
+        Flux<String> stringFlux = assistant.chatStreamFlux(message);
         return stringFlux.map(text -> Map.of("content", text))
                 .concatWith(Flux.just(Map.of("content", "[DONE]")));
     }
 
+    /**
+     * 对话 + 推理
+     */
     @RequestMapping( "/chat/reasoning")
     public Map<String, String> chatReasoning(@RequestParam String message) {
 
@@ -73,6 +84,9 @@ public class ChatController {
         return Map.of("reasoningContent", thinking, "content", text);
     }
 
+    /**
+     * 流式对话 + 推理
+     */
     @RequestMapping( path = "/chat/stream/reasoning", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<Map<String, String>> chatStreamReasoning(@RequestParam String message) {
          UserMessage userMessage = UserMessage.from(message);
@@ -117,6 +131,41 @@ public class ChatController {
                     sink.error(throwable);
                 }
             });
+        });
+    }
+
+    /**
+     * 流式对话 + 推理
+     */
+    @RequestMapping(path = "/chat/stream/reasoning2", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<Map<String, String>> chatStreamReasoning2(@RequestParam String message) {
+
+        Assistant assistant = AiServices.builder(Assistant.class)
+                .streamingChatModel(streamingChatModel)
+                .build();
+
+        TokenStream tokenStream = assistant.chatStream(message);
+
+        return Flux.create(sink -> {
+            tokenStream.onPartialThinking(thinking -> {
+                        System.out.println("【推理】 = " + thinking.text());
+                        sink.next(Map.of("reasoningContent", thinking.text()));
+                    })
+                    .onPartialResponse(partialResponse -> {
+                        System.out.println("【回答】 = " + partialResponse);
+                        sink.next(Map.of("content", partialResponse));
+                    })
+                    .onCompleteResponse(chatResponse -> {
+                        System.out.println("【完整推理】 = " + chatResponse.aiMessage().thinking());
+                        System.out.println("【完整回答】 = " + chatResponse.aiMessage().text());
+                        sink.next(Map.of("content", "[DONE]"));
+                        sink.complete();
+                    })
+                    .onError((Throwable error) -> {
+                        System.out.println("【错误】 = " + error.getMessage());
+                        sink.error(error);
+                    })
+                    .start();
         });
     }
 

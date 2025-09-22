@@ -18,6 +18,8 @@
 
     <properties>
         <java.version>21</java.version>
+        <langchain4j.version>1.5.0</langchain4j.version>
+        <langchain4j-beta.version>1.5.0-beta11</langchain4j-beta.version>
     </properties>
 
     <dependencies>
@@ -35,25 +37,37 @@
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
-            <version>1.3.0</version>
+            <version>${langchain4j.version}</version>
         </dependency>
         <!-- langchain4j-open-ai -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-open-ai-spring-boot-starter</artifactId>
-            <version>1.3.0-beta9</version>
+            <version>${langchain4j-beta.version}</version>
         </dependency>
         <!-- langchain4j-dashscope -->
-        <!--<dependency>
+        <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-community-dashscope-spring-boot-starter</artifactId>
-            <version>1.3.0-beta9</version>
-        </dependency>-->
+            <version>${langchain4j-beta.version}</version>
+        </dependency>
         <!-- langchain4j-reactor -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-reactor</artifactId>
-            <version>1.3.0-beta9</version>
+            <version>${langchain4j-beta.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-document-parser-apache-tika</artifactId>
+            <version>${langchain4j-beta.version}</version>
+        </dependency>
+
+        <!-- langchain4j-agentic -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-agentic</artifactId>
+            <version>${langchain4j-beta.version}</version>
         </dependency>
 
         <dependency>
@@ -96,7 +110,7 @@
     </build>
 
     <!-- 仓库地址 -->
-    <!--<repositories>
+    <repositories>
         <repository>
             <id>aliyun-public</id>
             <url>https://maven.aliyun.com/repository/public</url>
@@ -107,7 +121,7 @@
                 <enabled>true</enabled>
             </snapshots>
         </repository>
-    </repositories>-->
+    </repositories>
 
 
 </project>
