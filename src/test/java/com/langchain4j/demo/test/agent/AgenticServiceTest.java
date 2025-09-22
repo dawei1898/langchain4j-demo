@@ -6,6 +6,9 @@ import com.langchain4j.demo.enums.RequestCategory;
 import com.langchain4j.demo.model.EveningPlan;
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.UntypedAgent;
+import dev.langchain4j.agentic.agent.AgentInvocationException;
+import dev.langchain4j.agentic.agent.ErrorRecoveryResult;
+import dev.langchain4j.agentic.scope.AgenticScope;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import jakarta.annotation.Resource;
@@ -53,7 +56,7 @@ public class AgenticServiceTest {
      * 顺序工作流
      */
     @Test
-    public void testAgenticService02() {
+    public void testSequenceWorkflow01() {
         String outputName = "story";
 
         // 作家智能体
@@ -102,7 +105,7 @@ public class AgenticServiceTest {
      * 顺序工作流
      */
     @Test
-    public void testAgenticService03() {
+    public void testSequenceWorkflow02() {
         String outputName = "story";
         // 作家智能体
         CreativeWriter creativeWriter = AgenticServices
@@ -300,6 +303,75 @@ public class AgenticServiceTest {
         String response = expertRouterAgent.ask(request);
         System.out.println("【回答】 = " + response);
 
+    }
+
+
+    /**
+     * 错误处理
+     */
+    @Test
+    public void testErrorHandling() {
+        String outputName = "story";
+
+        // 作家智能体
+        CreativeWriter creativeWriter = AgenticServices
+                .agentBuilder(CreativeWriter.class)
+                .chatModel(chatModel)
+                .outputName(outputName)
+                .build();
+        // 风格智能体
+        StyleEditor styleEditor = AgenticServices
+                .agentBuilder(StyleEditor.class)
+                .chatModel(chatModel)
+                .outputName(outputName)
+                .build();
+
+        // 创建创作工作流
+        UntypedAgent creatorAgent = AgenticServices
+                .sequenceBuilder()
+                .subAgents(creativeWriter, styleEditor)
+                .outputName(outputName)
+                .errorHandler(errorContext -> {
+                    String agentName = errorContext.agentName();
+                    AgenticScope agenticScope = errorContext.agenticScope();
+                    AgentInvocationException exception = errorContext.exception();
+                    System.out.println("agentName = " + agentName);
+                    System.out.println("exception = " + exception);
+                    System.out.println("errorContext = " + JSON.toJSONString(errorContext));
+                    return null;
+                })
+                .build();
+
+        // 入参
+        Map<String, Object> input = Map.of(
+                //"topic", "如何成为一名优秀的程序员", // 缺少关键入参，会报错
+                "style", "实战主义"
+        );
+        System.out.println("【提问】 = " + input);
+
+        // 调取智能体
+        String story = (String)creatorAgent.invoke(input);
+
+        System.out.println("【回答】 = " + story);
+    }
+
+
+    /**
+     * 声明式定义智能体
+     */
+    @Test
+    public void testDeclarativeAPI() {
+        // 美食电影计划智能体 （声明式定义）
+        EveningPlannerAgentV2 eveningPlannerAgentV2 =
+                AgenticServices.createAgenticSystem(EveningPlannerAgentV2.class, chatModel);
+
+        String mood = "浪漫";
+        System.out.println("mood = " + mood);
+
+        // 并行调用美食、电影计划智能体
+        List<EveningPlan> plans = eveningPlannerAgentV2.plan(mood);
+
+        System.out.println("【回答】 = " + JSON.toJSONString(plans));
     }
 
 }
