@@ -2,7 +2,8 @@ package com.langchain4j.demo.test.agent;
 
 import com.alibaba.fastjson2.JSON;
 import com.langchain4j.demo.agent.*;
-import dev.langchain4j.agentic.Agent;
+import com.langchain4j.demo.enums.RequestCategory;
+import com.langchain4j.demo.model.EveningPlan;
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.model.chat.ChatModel;
@@ -15,7 +16,6 @@ import org.springframework.test.context.ActiveProfiles;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 /**
@@ -247,4 +247,59 @@ public class AgenticServiceTest {
         System.out.println("【回答】 = " + JSON.toJSONString(plans));
 
     }
+
+    /**
+     * 条件工作流
+     */
+    @Test
+    public void testConditionWorkflow() {
+        // 问题路由智能体
+        CategoryRouter categoryRouter = AgenticServices
+                .agentBuilder(CategoryRouter.class)
+                .chatModel(chatModel)
+                .outputName("category")
+                .build();
+
+        // 法律专家智能体
+        LegalExpert legalExpert = AgenticServices
+                .agentBuilder(LegalExpert.class)
+                .chatModel(chatModel)
+                .outputName("response")
+                .build();
+
+        // 科技专家智能体
+        TechnicalExpert technicalExpert = AgenticServices
+                .agentBuilder(TechnicalExpert.class)
+                .chatModel(chatModel)
+                .outputName("response")
+                .build();
+
+        // 医疗专家智能体
+        MedicalExpert medicalExpert = AgenticServices
+                .agentBuilder(MedicalExpert.class)
+                .chatModel(chatModel)
+                .outputName("response")
+                .build();
+
+        // 条件判断
+        UntypedAgent expertsAgent = AgenticServices
+                .conditionalBuilder()
+                .subAgents(agenticScope -> agenticScope.readState("category", RequestCategory.UNKNOWN) == RequestCategory.LEGAL, legalExpert)
+                .subAgents(agenticScope -> agenticScope.readState("category", RequestCategory.UNKNOWN) == RequestCategory.TECHNICAL, technicalExpert)
+                .subAgents(agenticScope -> agenticScope.readState("category", RequestCategory.UNKNOWN) == RequestCategory.MEDICAL, medicalExpert)
+                .build();
+
+        ExpertRouterAgent expertRouterAgent = AgenticServices
+                .sequenceBuilder(ExpertRouterAgent.class)
+                .subAgents(categoryRouter, expertsAgent)
+                .outputName("response")
+                .build();
+
+        String request = "前公司工资没结清，请问我如何追回来？";
+        System.out.println("request = " + request);
+        String response = expertRouterAgent.ask(request);
+        System.out.println("【回答】 = " + response);
+
+    }
+
 }

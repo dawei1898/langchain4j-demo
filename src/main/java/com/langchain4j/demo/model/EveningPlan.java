@@ -1,4 +1,4 @@
-package com.langchain4j.demo.agent;
+package com.langchain4j.demo.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
