@@ -1,6 +1,8 @@
 package com.langchain4j.demo.test.agent;
 
+import com.alibaba.fastjson2.JSON;
 import com.langchain4j.demo.agent.*;
+import dev.langchain4j.agentic.Agent;
 import dev.langchain4j.agentic.AgenticServices;
 import dev.langchain4j.agentic.UntypedAgent;
 import dev.langchain4j.model.chat.ChatModel;
@@ -10,7 +12,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * 智能体服务测试
@@ -191,5 +197,54 @@ public class AgenticServiceTest {
 
         String story = styledWriter.writeStoryWithStyle(topic, style);
         System.out.println("【回答】 = " + story);
+    }
+
+
+    /**
+     * 并行工作流
+     */
+    @Test
+    public void testParallelWorkflow() {
+        // 美食智能体
+        FoodExpert foodExpert = AgenticServices
+                .agentBuilder(FoodExpert.class)
+                .chatModel(chatModel)
+                .outputName("meals")
+                .build();
+
+        // 电影智能体
+        MovieExpert movieExpert = AgenticServices
+                .agentBuilder(MovieExpert.class)
+                .chatModel(chatModel)
+                .outputName("movies")
+                .build();
+
+
+        // 美食电影计划智能体
+        EveningPlannerAgent eveningPlannerAgent = AgenticServices
+                .parallelBuilder(EveningPlannerAgent.class)
+                .subAgents(foodExpert, movieExpert)
+                .executor(Executors.newFixedThreadPool(2))
+                .outputName("plans")
+                .output(agenticScope -> {
+                    List<String> meals = agenticScope.readState("meals", new ArrayList<>());
+                    List<String> movies = agenticScope.readState("movies", new ArrayList<>());
+                    // 合并 meals 和 movies
+                    List<EveningPlan> plans = new ArrayList<>();
+                    for (int i = 0; i < meals.size(); i++) {
+                        if (i < movies.size()) {
+                            plans.add(new EveningPlan(meals.get(i), movies.get(i)));
+                        }
+                    }
+                    return plans;
+                })
+                .build();
+
+        String mood = "难过";
+        System.out.println("mood = " + mood);
+        // 并行调用美食、电影计划智能体
+        List<EveningPlan> plans = eveningPlannerAgent.plan(mood);
+        System.out.println("【回答】 = " + JSON.toJSONString(plans));
+
     }
 }
