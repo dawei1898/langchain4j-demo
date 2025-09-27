@@ -1,9 +1,12 @@
 package com.langchain4j.demo.ai;
 
+import com.langchain4j.demo.guardrails.MessageAuditInputGuardrail;
+import com.langchain4j.demo.guardrails.MessageCheckInputGuardrail;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.Content;
 import dev.langchain4j.service.*;
+import dev.langchain4j.service.guardrail.InputGuardrails;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -38,6 +41,8 @@ public interface AssistantTest {
     @UserMessage("为以下主题的文章生成大纲: {{it}}")
     Result<List<String>> generateOutlineFor(String topic);
 
+    Result<String> chatWithResult(String message);
+
     TokenStream chatStream(@UserMessage String message);
 
     @SystemMessage(fromResource = "prompt/system-prompt.txt")
@@ -45,5 +50,8 @@ public interface AssistantTest {
 
     // TODO 报错
     Flux<AiMessage> chatStreamReasoning(String message);
+
+    @InputGuardrails({MessageCheckInputGuardrail.class, MessageAuditInputGuardrail.class})
+    String chatWithGuardrail(String message);
 
 }
