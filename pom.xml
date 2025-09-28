@@ -87,6 +87,19 @@
             <version>${langchain4j-beta.version}</version>
         </dependency>
 
+        <!-- web-search -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-web-search-engine-searchapi</artifactId>
+            <version>${langchain4j-beta.version}</version>
+        </dependency>
+
+        <!--<dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-community-redis</artifactId>
+            <version>${langchain4j-beta.version}</version>
+        </dependency>-->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
