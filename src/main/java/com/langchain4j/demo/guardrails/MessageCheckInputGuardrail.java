@@ -23,7 +23,7 @@ public class MessageCheckInputGuardrail implements InputGuardrail {
 
     @Override
     public InputGuardrailResult validate(InputGuardrailRequest params) {
-        List<ChatMessage> messages = params.requestParams().chatMemory().messages();
+        //List<ChatMessage> messages = params.requestParams().chatMemory().messages();
 
         UserMessage userMessage = params.userMessage();
         String text = userMessage.singleText();

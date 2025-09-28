@@ -29,6 +29,7 @@ public class PasswordCheckOutputGuardrail implements OutputGuardrail {
      */
     @Override
     public OutputGuardrailResult validate(AiMessage responseFromLLM) {
+        String thinking = responseFromLLM.thinking();
         String text = responseFromLLM.text();
         for (String sensitiveWord : SENSITIVE_WORDS) {
             if (StringUtils.contains(text, sensitiveWord)) {
@@ -43,7 +44,11 @@ public class PasswordCheckOutputGuardrail implements OutputGuardrail {
             }
         }
         // 将重试后成功的回答消息返回
-        return this.successWith(text);
+        if (StringUtils.isNotEmpty(thinking)) {
+            return this.successWith(thinking);
+        } else {
+            return this.successWith(text);
+        }
     }
 
 

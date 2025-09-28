@@ -1,9 +1,17 @@
 package com.langchain4j.demo.controller;
 
 import com.langchain4j.demo.ai.Assistant;
-import com.langchain4j.demo.ai.AssistantTest;
+import com.langchain4j.demo.ai.AssistantMemory;
+import com.langchain4j.demo.guardrails.MessageCheckInputGuardrail;
+import com.langchain4j.demo.guardrails.PasswordCheckOutputGuardrail;
+import com.langchain4j.demo.listener.MyAiServiceCompletedListener;
+import com.langchain4j.demo.tools.WeatherTool;
 import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.memory.ChatMemory;
+import dev.langchain4j.memory.chat.ChatMemoryProvider;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.response.*;
@@ -12,6 +20,7 @@ import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +30,7 @@ import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * 对话服务
@@ -41,6 +51,13 @@ public class ChatController {
     @Resource
     private StreamingChatModel streamingChatModel;
 
+    @Resource
+    private ChatMemoryProvider chatMemoryProvider;
+
+    private final ChatMemory messageWindowChatMemory = MessageWindowChatMemory.withMaxMessages(5);
+
+    public static final String DEFAULT_CHAT_ID = UUID.randomUUID().toString();
+
 
     /**
      * 对话
@@ -48,6 +65,22 @@ public class ChatController {
     @RequestMapping("/chat")
     public Map<String, String> chat(@RequestParam String message) {
         String result = chatModel.chat(message);
+
+        /*String result = null;
+        try {
+            Assistant assistant = AiServices.builder(Assistant.class)
+                    .chatModel(chatModel)
+                    .chatMemory(messageWindowChatMemory)                  // 记忆存储
+                    .registerListeners(new MyAiServiceCompletedListener())// 监听对话完成
+                    .tools(new WeatherTool())                             // 调用工具
+                    .inputGuardrails(new MessageCheckInputGuardrail())    // 输入围栏
+                    .outputGuardrails(new PasswordCheckOutputGuardrail()) // 输出围栏
+                    .build();
+            result = assistant.chat(message);
+        } catch (Exception e) {
+            return Map.of("content", e.getMessage());
+        }*/
+
         return Map.of("content", result);
     }
 
@@ -58,6 +91,11 @@ public class ChatController {
     public Flux<Map<String, String>> chatStream(@RequestParam String message) {
         Assistant assistant = AiServices.builder(Assistant.class)
                 .streamingChatModel(streamingChatModel)
+                .chatMemory(messageWindowChatMemory)                  // 记忆存储
+                .registerListeners(new MyAiServiceCompletedListener())// 监听对话完成
+                .tools(new WeatherTool())                             // 调用工具
+                .inputGuardrails(new MessageCheckInputGuardrail())    // 输入围栏
+                .outputGuardrails(new PasswordCheckOutputGuardrail()) // 输出围栏
                 .build();
         Flux<String> stringFlux = assistant.chatStreamFlux(message);
         return stringFlux.map(text -> Map.of("content", text))
@@ -138,13 +176,26 @@ public class ChatController {
      * 流式对话 + 推理
      */
     @RequestMapping(path = "/chat/stream/reasoning2", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<Map<String, String>> chatStreamReasoning2(@RequestParam String message) {
+    public Flux<Map<String, String>> chatStreamReasoning2(@RequestParam String message,
+                                                          @RequestParam(required = false) String chatId) {
 
-        Assistant assistant = AiServices.builder(Assistant.class)
+        if (StringUtils.isEmpty(chatId)) {
+            chatId = DEFAULT_CHAT_ID;
+        }
+
+        AssistantMemory assistant = AiServices.builder(AssistantMemory.class)
                 .streamingChatModel(streamingChatModel)
+                .chatMemoryProvider(chatMemoryProvider) // 记忆存储
+                .registerListeners(new MyAiServiceCompletedListener())// 监听对话完成
+                //.tools(new WeatherTool())                           // 调用工具 TODO 加了工具后，推理内容为空了
+                .inputGuardrails(new MessageCheckInputGuardrail())    // 输入围栏
+                //.outputGuardrails(new PasswordCheckOutputGuardrail()) // 输出围栏 TODO 可能影响推理输出
                 .build();
 
-        TokenStream tokenStream = assistant.chatStream(message);
+        UserMessage userMessage = UserMessage.from(message);
+        List<ChatMessage> userMessages = List.of(userMessage);
+
+        TokenStream tokenStream = assistant.streamChat(chatId ,userMessages);
 
         return Flux.create(sink -> {
             tokenStream.onPartialThinking(thinking -> {
