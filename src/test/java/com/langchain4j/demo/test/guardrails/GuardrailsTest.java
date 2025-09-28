@@ -68,13 +68,14 @@ public class GuardrailsTest {
     }
 
     /**
-     * 测试输出护栏-失败
+     * 测试输出护栏-重试
      */
     @Test
     public void testOutputGuardrail01() {
         AssistantTest assistant = AiServices
                 .builder(AssistantTest.class)
                 .chatModel(chatModel)
+                .chatMemory(MessageWindowChatMemory.withMaxMessages(5))
                 .outputGuardrails(new PasswordCheckOutputGuardrail())
                 .build();
 

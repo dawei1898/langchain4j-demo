@@ -2,11 +2,13 @@ package com.langchain4j.demo.ai;
 
 import com.langchain4j.demo.guardrails.MessageAuditInputGuardrail;
 import com.langchain4j.demo.guardrails.MessageCheckInputGuardrail;
+import com.langchain4j.demo.guardrails.PasswordCheckOutputGuardrail;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.Content;
 import dev.langchain4j.service.*;
 import dev.langchain4j.service.guardrail.InputGuardrails;
+import dev.langchain4j.service.guardrail.OutputGuardrails;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -52,6 +54,7 @@ public interface AssistantTest {
     Flux<AiMessage> chatStreamReasoning(String message);
 
     @InputGuardrails({MessageCheckInputGuardrail.class, MessageAuditInputGuardrail.class})
+    @OutputGuardrails(value = {PasswordCheckOutputGuardrail.class}, maxRetries = 2)
     String chatWithGuardrail(String message);
 
 }

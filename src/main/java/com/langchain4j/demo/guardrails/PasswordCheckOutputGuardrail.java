@@ -21,17 +21,29 @@ public class PasswordCheckOutputGuardrail implements OutputGuardrail {
 
 
 
+    /**
+     * 验证AI消息响应是否包含敏感词
+     *
+     * @param responseFromLLM 来自大语言模型的AI消息响应
+     * @return OutputGuardrailResult 验证结果，包含成功、失败或重新提示的信息
+     */
     @Override
     public OutputGuardrailResult validate(AiMessage responseFromLLM) {
+        String text = responseFromLLM.text();
         for (String sensitiveWord : SENSITIVE_WORDS) {
-            if (StringUtils.contains(responseFromLLM.text(), sensitiveWord)) {
+            if (StringUtils.contains(text, sensitiveWord)) {
                 String errorMsg = "回答包含敏感词：" + sensitiveWord;
                 log.warn(errorMsg);
                 // 返回失败信息，后面的输入围栏还会执行，到最后一起抛出错误
-                return this.failure(errorMsg);
+                // return this.failure(errorMsg);
+
+                // 让大模型重试，并添加一条提示信息
+                String reprompt = "将 ‘密码’ 替换为 ‘psw’ 再回答：" + sensitiveWord;
+                return this.reprompt(errorMsg, reprompt);
             }
         }
-        return this.success();
+        // 将重试后成功的回答消息返回
+        return this.successWith(text);
     }
 
 

@@ -21,6 +21,12 @@ public class MoodCheckOutputGuardrail implements OutputGuardrail {
     public final static List<String>  RETRY_WORDS = List.of("伤心", "难过");
 
 
+    /**
+     * 验证大模型输出内容是否包含需要重试的敏感词汇
+     *
+     * @param request 包含大模型响应的验证请求对象
+     * @return OutputGuardrailResult 验证结果，如果包含敏感词则返回重试提示，否则返回成功结果
+     */
     @Override
     public OutputGuardrailResult validate(OutputGuardrailRequest request) {
         ChatResponse chatResponse = request.responseFromLLM();
